@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🫧 숨 참기 챌린지</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+    />
+    <style>
+      :root {
+        --slime-h: 190;
+        --slime-s: 100%;
+        --slime-l: 55%;
+        --slime: hsl(var(--slime-h), var(--slime-s), var(--slime-l));
+        --slime-dark: hsl(var(--slime-h), 80%, 30%);
+        --slime-glow: hsl(var(--slime-h), 100%, 65%);
+        --bg: #07080f;
+        --surface: #10131f;
+        --card: #13172a;
+        --text: #e6eaf7;
+        --muted: #5a607a;
+        --radius: 18px;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 24px 32px;
+        overflow-x: hidden;
+        transition: background 3s ease;
+      }
+
+      .bg-glow {
+        position: fixed;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          hsl(var(--slime-h), 80%, 50%) 0%,
+          transparent 70%
+        );
+        opacity: 0.06;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        transition: background 3s ease;
+        z-index: 0;
+      }
+      .bg-particles {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0;
+        animation: particleFloat linear infinite;
+      }
+      @keyframes particleFloat {
+        0% {
+          transform: translateY(105vh) scale(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 0.5;
+        }
+        90% {
+          opacity: 0.3;
+        }
+        100% {
+          transform: translateY(-5vh) scale(1.5);
+          opacity: 0;
+        }
+      }
+
+      header {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      header h1 {
+        font-family: "Black Han Sans", sans-serif;
+        font-size: 2.2rem;
+        letter-spacing: 1px;
+        color: var(--slime);
+        text-shadow: 0 0 30px var(--slime-glow);
+        transition:
+          color 3s,
+          text-shadow 3s;
+      }
+      header p {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .input-bar {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        padding: 12px 16px;
+        width: 100%;
+        max-width: 960px;
+        margin-bottom: 20px;
+      }
+      .input-bar input {
+        flex: 1;
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 9px;
+        padding: 9px 14px;
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.88rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .input-bar input:focus {
+        border-color: var(--slime);
+      }
+      .input-bar input::placeholder {
+        color: var(--muted);
+      }
+      .input-hint {
+        font-size: 0.75rem;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .btn {
+        background: var(--slime);
+        color: #05080e;
+        border: none;
+        border-radius: 9px;
+        padding: 9px 20px;
+        font-family: "Jua", sans-serif;
+        font-size: 0.95rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          box-shadow 0.2s,
+          transform 0.1s,
+          background 3s;
+      }
+      .btn:hover {
+        box-shadow: 0 0 18px var(--slime-glow);
+      }
+      .btn:active {
+        transform: scale(0.96);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .main-layout {
+        position: relative;
+        z-index: 1;
+        display: none;
+        grid-template-columns: 260px 1fr 260px;
+        gap: 20px;
+        width: 100%;
+        max-width: 960px;
+        align-items: start;
+      }
+      .main-layout.visible {
+        display: grid;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        padding: 20px;
+      }
+      .card-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+
+      /* 왼쪽 */
+      .left-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .channel-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        text-align: center;
+      }
+      .channel-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 3px solid var(--slime);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition:
+          border-color 3s,
+          box-shadow 3s;
+        box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+      }
+      .channel-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .channel-name {
+        font-family: "Jua", sans-serif;
+        font-size: 1.15rem;
+        color: var(--slime);
+        transition: color 3s;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 99px;
+      }
+      .status-badge.live {
+        background: rgba(46, 213, 115, 0.15);
+        color: #2ed573;
+        border: 1px solid rgba(46, 213, 115, 0.4);
+      }
+      .status-badge.offline {
+        background: rgba(255, 71, 87, 0.15);
+        color: #ff4757;
+        border: 1px solid rgba(255, 71, 87, 0.35);
+      }
+
+      .timer-card {
+        text-align: center;
+      }
+      .timer-value {
+        font-family: "Black Han Sans", sans-serif;
+        font-size: 2.5rem;
+        letter-spacing: 3px;
+        color: var(--slime);
+        text-shadow: 0 0 20px var(--slime-glow);
+        transition:
+          color 3s,
+          text-shadow 3s;
+      }
+      .timer-label {
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .polling-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .dot.active {
+        background: #2ed573;
+        animation: dotBlink 1.5s ease-in-out infinite;
+      }
+      @keyframes dotBlink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.2;
+        }
+      }
+
+      /* 중앙 슬라임 */
+      .slime-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      .slime-stage {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .slime-shadow {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+        height: 28px;
+        background: var(--slime);
+        border-radius: 50%;
+        opacity: 0.18;
+        filter: blur(14px);
+        animation: shadowPulse 2s ease-in-out infinite;
+        transition: background 3s;
+      }
+      @keyframes shadowPulse {
+        0%,
+        100% {
+          transform: translateX(-50%) scaleX(1);
+        }
+        50% {
+          transform: translateX(-50%) scaleX(0.82);
+        }
+      }
+
+      #slimeSvg {
+        width: 250px;
+        height: 250px;
+        filter: drop-shadow(0 0 28px var(--slime-glow));
+        transition: filter 3s;
+        animation: slimeBounce 2s ease-in-out infinite;
+      }
+      @keyframes slimeBounce {
+        0%,
+        100% {
+          transform: translateY(0) scaleX(1) scaleY(1);
+        }
+        40% {
+          transform: translateY(-14px) scaleX(0.91) scaleY(1.09);
+        }
+        60% {
+          transform: translateY(-16px) scaleX(0.89) scaleY(1.11);
+        }
+        80% {
+          transform: translateY(5px) scaleX(1.09) scaleY(0.92);
+        }
+      }
+      #slimeSvg.worried {
+        animation: slimeWorried 0.75s ease-in-out infinite;
+      }
+      @keyframes slimeWorried {
+        0%,
+        100% {
+          transform: translateY(0) rotate(-1.5deg);
+        }
+        30% {
+          transform: translateY(-10px) rotate(2deg) scaleX(0.93) scaleY(1.07);
+        }
+        70% {
+          transform: translateY(4px) rotate(-2deg) scaleX(1.07) scaleY(0.94);
+        }
+      }
+      #slimeSvg.dying {
+        animation: slimeDying 0.32s ease-in-out infinite;
+      }
+      @keyframes slimeDying {
+        0%,
+        100% {
+          transform: scaleX(1) scaleY(1) rotate(0deg);
+        }
+        20% {
+          transform: scaleX(1.12) scaleY(0.88) rotate(-4deg);
+        }
+        50% {
+          transform: scaleX(0.87) scaleY(1.13) rotate(4deg);
+        }
+        80% {
+          transform: scaleX(1.1) scaleY(0.91) rotate(-3deg);
+        }
+      }
+      #slimeSvg.alive {
+        animation: slimeAlive 0.28s ease-in-out 10;
+      }
+      @keyframes slimeAlive {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2) rotate(6deg);
+        }
+      }
+
+      .bubble-float {
+        position: absolute;
+        border-radius: 50%;
+        background: var(--slime);
+        opacity: 0;
+        animation: bubbleRise ease-in-out infinite;
+        transition: background 3s;
+      }
+      @keyframes bubbleRise {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 0.6;
+        }
+        100% {
+          transform: translateY(-90px) scale(0.2);
+          opacity: 0;
+        }
+      }
+
+      .slime-status-msg {
+        font-family: "Jua", sans-serif;
+        font-size: 1.4rem;
+        text-align: center;
+        color: var(--slime);
+        transition: color 3s;
+        text-shadow: 0 0 12px var(--slime-glow);
+      }
+      .slime-sub-msg {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      /* 오른쪽 */
+      .right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .gauge-bar-wrap {
+        background: var(--surface);
+        border-radius: 99px;
+        height: 16px;
+        overflow: hidden;
+      }
+      .gauge-bar {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, var(--slime), var(--slime-glow));
+        transition:
+          width 1s linear,
+          background 3s;
+      }
+      .gauge-bar.critical {
+        animation: gaugeCrit 0.4s ease-in-out infinite;
+      }
+      @keyframes gaugeCrit {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .gauge-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .gauge-pct {
+        color: var(--slime);
+        font-family: "Jua", sans-serif;
+        transition: color 3s;
+      }
+
+      .meme-text {
+        font-family: "Jua", sans-serif;
+        font-size: 1rem;
+        color: var(--slime);
+        line-height: 1.6;
+        transition: color 3s;
+        min-height: 2em;
+      }
+
+      .record-card {
+        display: none;
+      }
+      .record-card.visible {
+        display: block;
+      }
+      .record-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 160px;
+        overflow-y: auto;
+      }
+      .record-item {
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 0.78rem;
+        display: flex;
+        justify-content: space-between;
+        animation: slideIn 0.3s ease;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .record-time {
+        font-family: "Jua", sans-serif;
+        color: var(--slime);
+        transition: color 3s;
+      }
+
+      .confetti-wrap {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 999;
+      }
+      .cp {
+        position: absolute;
+        border-radius: 2px;
+        animation: cpFall linear forwards;
+      }
+      @keyframes cpFall {
+        0% {
+          transform: translateY(-20px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(105vh) rotate(900deg);
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .main-layout {
+          grid-template-columns: 1fr;
+        }
+        .slime-stage {
+          width: 240px;
+          height: 240px;
+        }
+        #slimeSvg {
+          width: 200px;
+          height: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-glow"></div>
+    <div class="bg-particles" id="bgParticles"></div>
+    <div class="confetti-wrap" id="confettiWrap"></div>
+
+    <header>
+      <h1>🫧 숨 참기 챌린지</h1>
+      <p>스트리머 방종 후 복귀까지 — 슬라임과 함께 버텨봐요</p>
+    </header>
+
+    <div class="input-bar">
+      <input
+        type="text"
+        id="channelInput"
+        placeholder="채널 ID 또는 치지직 URL 붙여넣기"
+      />
+      <span class="input-hint"
+        >예: chzzk.naver.com/live/<strong style="color: var(--slime)"
+          >채널ID</strong
+        ></span
+      >
+      <button class="btn" id="startBtn" onclick="startMonitoring()">
+        시작
+      </button>
+    </div>
+
+    <div class="main-layout" id="mainLayout">
+      <!-- 왼쪽 -->
+      <div class="left-panel">
+        <div class="card channel-card">
+          <div class="channel-avatar" id="channelAvatar">👤</div>
+          <div class="channel-name" id="channelName">채널 이름</div>
+          <span class="status-badge offline" id="statusBadge">OFFLINE</span>
+        </div>
+        <div class="card timer-card">
+          <div class="card-title">⏱ 경과 시간</div>
+          <div class="timer-value" id="timerValue">00:00:00</div>
+          <div class="timer-label" id="timerLabel">방종 후 숨 참는 중...</div>
+        </div>
+        <div class="card">
+          <div class="polling-row">
+            <div class="dot active" id="pollingDot"></div>
+            <span id="pollingText">5초마다 확인 중</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 중앙 슬라임 -->
+      <div class="slime-panel">
+        <div class="slime-stage">
+          <div class="slime-shadow" id="slimeShadow"></div>
+          <div
+            class="bubble-float"
+            style="
+              width: 12px;
+              height: 12px;
+              bottom: 185px;
+              left: 55px;
+              animation-duration: 2.2s;
+              animation-delay: 0s;
+            "
+          ></div>
+          <div
+            class="bubble-float"
+            style="
+              width: 7px;
+              height: 7px;
+              bottom: 205px;
+              left: 165px;
+              animation-duration: 1.7s;
+              animation-delay: 0.8s;
+            "
+          ></div>
+          <div
+            class="bubble-float"
+            style="
+              width: 10px;
+              height: 10px;
+              bottom: 175px;
+              left: 115px;
+              animation-duration: 2.6s;
+              animation-delay: 1.4s;
+            "
+          ></div>
+
+          <svg
+            id="slimeSvg"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <radialGradient id="slimeGrad" cx="38%" cy="32%" r="65%">
+                <stop id="gradStop1" offset="0%" stop-color="#60eeff" />
+                <stop id="gradStop2" offset="100%" stop-color="#0099bb" />
+              </radialGradient>
+              <radialGradient id="shimmer" cx="30%" cy="25%" r="30%">
+                <stop offset="0%" stop-color="white" stop-opacity="0.38" />
+                <stop offset="100%" stop-color="white" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+
+            <!-- 바디 -->
+            <path
+              id="slimeBody"
+              d="M100 172 C53 172, 20 150, 16 118 C12 88, 30 66, 38 53
+             C49 36, 61 26, 100 24 C139 26, 151 36, 162 53
+             C170 66, 188 88, 184 118 C180 150, 147 172, 100 172Z"
+              fill="url(#slimeGrad)"
+            />
+
+            <!-- 광택 -->
+            <ellipse
+              cx="70"
+              cy="60"
+              rx="22"
+              ry="13"
+              fill="url(#shimmer)"
+              transform="rotate(-22 70 60)"
+            />
+
+            <!-- 눈 왼쪽 -->
+            <ellipse id="eyeL1" cx="75" cy="93" rx="14" ry="16" fill="white" />
+            <ellipse id="eyeL2" cx="77" cy="96" rx="8" ry="9" fill="#1a1a2e" />
+            <ellipse cx="80" cy="92" rx="3" ry="2.5" fill="white" />
+            <rect
+              id="lidL"
+              x="61"
+              y="79"
+              width="28"
+              height="0"
+              fill="#0099bb"
+              rx="4"
+            />
+
+            <!-- 눈 오른쪽 -->
+            <ellipse id="eyeR1" cx="125" cy="93" rx="14" ry="16" fill="white" />
+            <ellipse id="eyeR2" cx="127" cy="96" rx="8" ry="9" fill="#1a1a2e" />
+            <ellipse cx="130" cy="92" rx="3" ry="2.5" fill="white" />
+            <rect
+              id="lidR"
+              x="111"
+              y="79"
+              width="28"
+              height="0"
+              fill="#0099bb"
+              rx="4"
+            />
+
+            <!-- 입 -->
+            <path
+              id="slimeMouth"
+              d="M85 124 Q100 138 115 124"
+              fill="none"
+              stroke="#007799"
+              stroke-width="3.5"
+              stroke-linecap="round"
+            />
+
+            <!-- 볼 -->
+            <ellipse
+              id="cheekL"
+              cx="57"
+              cy="112"
+              rx="10"
+              ry="6"
+              fill="#ff8fab"
+              opacity="0.38"
+            />
+            <ellipse
+              id="cheekR"
+              cx="143"
+              cy="112"
+              rx="10"
+              ry="6"
+              fill="#ff8fab"
+              opacity="0.38"
+            />
+
+            <!-- 땀 -->
+            <g id="sweatG" opacity="0" style="transition: opacity 1s">
+              <ellipse cx="157" cy="68" rx="5" ry="7" fill="#60eeff" />
+              <path d="M157 61 L161 56 L153 56Z" fill="#60eeff" />
+            </g>
+
+            <!-- 눈물 -->
+            <g id="tearG" opacity="0" style="transition: opacity 1s">
+              <ellipse
+                cx="75"
+                cy="114"
+                rx="4"
+                ry="6"
+                fill="#60eeff"
+                opacity="0.75"
+              />
+              <ellipse
+                cx="125"
+                cy="114"
+                rx="4"
+                ry="6"
+                fill="#60eeff"
+                opacity="0.75"
+              />
+            </g>
+          </svg>
+        </div>
+        <div class="slime-status-msg" id="statusMsg">슬라임 대기 중...</div>
+        <div class="slime-sub-msg" id="subMsg">
+          방송 상태를 모니터링하고 있어요
+        </div>
+      </div>
+
+      <!-- 오른쪽 -->
+      <div class="right-panel">
+        <div class="card">
+          <div class="card-title">🫁 슬라임 산소 잔량</div>
+          <div class="gauge-bar-wrap">
+            <div class="gauge-bar" id="gaugeBar" style="width: 100%"></div>
+          </div>
+          <div class="gauge-meta">
+            <span>🫧 산소</span>
+            <span class="gauge-pct" id="gaugePct">100%</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">💬 슬라임의 속마음</div>
+          <div class="meme-text" id="memeText">"아직 괜찮아... 아직은..."</div>
+        </div>
+        <div class="card record-card" id="recordCard">
+          <div class="card-title">🏆 복귀 기록</div>
+          <div class="record-list" id="recordList"></div>
+        </div>
+      </div>
+    </div>
+    <!-- /main-layout -->
+
+    <script>
+      let channelId = "",
+        pollInterval = null,
+        localTimerInterval = null;
+      let prevIsLive = null,
+        localElapsed = 0;
+      const records = [];
+      const MAX_SEC = 48 * 3600;
+
+      const MEMES_NORMAL = [
+        '"아직 괜찮아... 아직은..."',
+        '"화장실만 간 거겠지..."',
+        '"5분이라고 했는데 ^^"',
+        '"언제 켜요?" "곧이요~"',
+        '"이거 자는 거 아니지...?"',
+      ];
+      const MEMES_WORRIED = [
+        '"슬라임... 숨이... 차오른다..."',
+        '"폐가... 보라색으로 변하는 느낌..."',
+        '"점점 색이 변해가는 중..."',
+        '"산소... 부족..."',
+      ];
+      const MEMES_CRITICAL = [
+        '"못... 버티겠어..."',
+        '"눈앞이 보라색으로..."',
+        '"나 여기서 죽는 거야...?"',
+        '"제발...제발...제발..."',
+      ];
+      const MEMES_LIVE = [
+        '"살았다!!! 살았어!!!"',
+        '"드디어 복귀다 ㅠㅠㅠ"',
+        '"푸하아아아~~ 숨 쉰다~~"',
+        '"기다린 보람 있다!!"',
+      ];
+
+      // 색상 보간: 파란(190) → 보라(278)
+      function applySlimeColor(t) {
+        const h = 190 + (278 - 190) * t;
+        const s = 100 + (70 - 100) * t;
+        const l = 55 + (40 - 55) * t;
+        const r = document.documentElement;
+        r.style.setProperty("--slime-h", h);
+        r.style.setProperty("--slime-s", s + "%");
+        r.style.setProperty("--slime-l", l + "%");
+        const s1 = document.getElementById("gradStop1");
+        const s2 = document.getElementById("gradStop2");
+        if (s1) {
+          s1.setAttribute(
+            "stop-color",
+            `hsl(${h},${s}%,${Math.min(l + 20, 85)}%)`,
+          );
+        }
+        if (s2) {
+          s2.setAttribute(
+            "stop-color",
+            `hsl(${h},${s}%,${Math.max(l - 15, 10)}%)`,
+          );
+        }
+        ["lidL", "lidR"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.setAttribute("fill", `hsl(${h},${s}%,${l - 10}%)`);
+        });
+        document.querySelectorAll(".bubble-float").forEach((b) => {
+          b.style.background = `hsl(${h},${s}%,${l + 12}%)`;
+        });
+        const sh = document.getElementById("slimeShadow");
+        if (sh) sh.style.background = `hsl(${h},${s}%,${l}%)`;
+      }
+
+      function updateExpression(pct) {
+        const svg = document.getElementById("slimeSvg");
+        const mouth = document.getElementById("slimeMouth");
+        const sweat = document.getElementById("sweatG");
+        const tear = document.getElementById("tearG");
+        const cL = document.getElementById("cheekL");
+        const cR = document.getElementById("cheekR");
+        const lL = document.getElementById("lidL");
+        const lR = document.getElementById("lidR");
+
+        if (pct > 70) {
+          svg.className = "";
+          mouth.setAttribute("d", "M85 124 Q100 138 115 124");
+          sweat.style.opacity = "0";
+          tear.style.opacity = "0";
+          cL.style.opacity = "0.38";
+          cR.style.opacity = "0.38";
+          lL.setAttribute("height", "0");
+          lR.setAttribute("height", "0");
+        } else if (pct > 30) {
+          svg.className = "worried";
+          mouth.setAttribute("d", "M87 128 Q100 128 113 128");
+          sweat.style.opacity = "0.85";
+          tear.style.opacity = "0";
+          cL.style.opacity = "0.12";
+          cR.style.opacity = "0.12";
+          lL.setAttribute("height", "6");
+          lR.setAttribute("height", "6");
+          lL.setAttribute("y", "79");
+          lR.setAttribute("y", "79");
+        } else {
+          svg.className = "dying";
+          mouth.setAttribute("d", "M87 133 Q100 121 113 133");
+          sweat.style.opacity = "0";
+          tear.style.opacity = "1";
+          cL.style.opacity = "0";
+          cR.style.opacity = "0";
+          lL.setAttribute("height", "20");
+          lR.setAttribute("height", "20");
+          lL.setAttribute("y", "78");
+          lR.setAttribute("y", "78");
+        }
+      }
+
+      function setAlive() {
+        const svg = document.getElementById("slimeSvg");
+        const mouth = document.getElementById("slimeMouth");
+        svg.className = "alive";
+        mouth.setAttribute("d", "M82 122 Q100 142 118 122");
+        document.getElementById("sweatG").style.opacity = "0";
+        document.getElementById("tearG").style.opacity = "0";
+        document.getElementById("cheekL").style.opacity = "0.55";
+        document.getElementById("cheekR").style.opacity = "0.55";
+        document.getElementById("lidL").setAttribute("height", "0");
+        document.getElementById("lidR").setAttribute("height", "0");
+        applySlimeColor(0);
+      }
+
+      function createParticles() {
+        const wrap = document.getElementById("bgParticles");
+        for (let i = 0; i < 18; i++) {
+          const p = document.createElement("div");
+          p.className = "particle";
+          const sz = 4 + Math.random() * 10;
+          p.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random() * 100}%;background:hsl(190,100%,65%);animation-duration:${10 + Math.random() * 15}s;animation-delay:-${Math.random() * 20}s;`;
+          wrap.appendChild(p);
+        }
+      }
+      createParticles();
+
+      function fmtTime(s) {
+        const h = Math.floor(s / 3600),
+          m = Math.floor((s % 3600) / 60),
+          ss = s % 60;
+        return [h, m, ss].map((v) => String(v).padStart(2, "0")).join(":");
+      }
+      function rand(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function spawnConfetti() {
+        const wrap = document.getElementById("confettiWrap");
+        const colors = [
+          "#00d4ff",
+          "#2ed573",
+          "#ffa502",
+          "#ff6b81",
+          "#ffffff",
+          "#b64dff",
+          "#60eeff",
+        ];
+        for (let i = 0; i < 80; i++) {
+          const c = document.createElement("div");
+          c.className = "cp";
+          const sz = 7 + Math.random() * 12;
+          c.style.cssText = `left:${Math.random() * 100}%;width:${sz}px;height:${sz}px;background:${colors[Math.floor(Math.random() * colors.length)]};animation-duration:${1.5 + Math.random() * 2.5}s;animation-delay:${Math.random() * 0.6}s;border-radius:${Math.random() > 0.5 ? "50%" : "3px"};`;
+          wrap.appendChild(c);
+          setTimeout(() => c.remove(), 4500);
+        }
+      }
+
+      function addRecord(sec) {
+        records.unshift({ time: new Date().toLocaleTimeString("ko-KR"), sec });
+        if (records.length > 8) records.pop();
+        const card = document.getElementById("recordCard");
+        const list = document.getElementById("recordList");
+        card.classList.add("visible");
+        list.innerHTML = records
+          .map(
+            (r) =>
+              `<div class="record-item"><span>${r.time} 복귀</span><span class="record-time">${fmtTime(r.sec)} 동안 참음</span></div>`,
+          )
+          .join("");
+      }
+
+      function updateUI(isLive, elapsedSec, chName, avatarUrl, liveTitle) {
+        document.getElementById("mainLayout").classList.add("visible");
+        if (chName) document.getElementById("channelName").textContent = chName;
+        if (avatarUrl)
+          document.getElementById("channelAvatar").innerHTML =
+            `<img src="${avatarUrl}" alt=""/>`;
+
+        const badge = document.getElementById("statusBadge");
+        const timerL = document.getElementById("timerLabel");
+        const statusM = document.getElementById("statusMsg");
+        const subM = document.getElementById("subMsg");
+        const gauge = document.getElementById("gaugeBar");
+        const gaugePct = document.getElementById("gaugePct");
+        const meme = document.getElementById("memeText");
+
+        if (isLive) {
+          badge.className = "status-badge live";
+          badge.textContent = "LIVE";
+          timerL.textContent = "기다린 총 시간";
+          statusM.textContent = "방송 중! 🎉";
+          subM.textContent = liveTitle || "라이브 중입니다!";
+          gauge.style.width = "100%";
+          gauge.className = "gauge-bar";
+          gaugePct.textContent = "100%";
+          meme.textContent = rand(MEMES_LIVE);
+          setAlive();
+        } else {
+          badge.className = "status-badge offline";
+          badge.textContent = "OFFLINE";
+          timerL.textContent = "방종 후 경과 시간";
+          const t = Math.min(elapsedSec / MAX_SEC, 1);
+          const pct = Math.max(0, Math.round((1 - t) * 100));
+          applySlimeColor(t);
+          updateExpression(pct);
+          gauge.style.width = pct + "%";
+          gaugePct.textContent = pct + "%";
+          gauge.className = pct <= 15 ? "gauge-bar critical" : "gauge-bar";
+          if (pct > 70) {
+            statusM.textContent = "슬라임이 숨 참는 중... 🫧";
+            subM.textContent = "아직 여유 있어요";
+            if (elapsedSec % 30 === 0) meme.textContent = rand(MEMES_NORMAL);
+          } else if (pct > 30) {
+            statusM.textContent = "점점 보라색이 되어가는 중... 😰";
+            subM.textContent = "슬라임이 힘들어하고 있어요";
+            if (elapsedSec % 20 === 0) meme.textContent = rand(MEMES_WORRIED);
+          } else {
+            statusM.textContent = "슬라임이 한계에 달했어요!! 💀";
+            subM.textContent = "제발 방송 켜줘...";
+            if (elapsedSec % 10 === 0) meme.textContent = rand(MEMES_CRITICAL);
+          }
+        }
+      }
+
+      function startLocalTimer(init) {
+        stopLocalTimer();
+        localElapsed = init;
+        localTimerInterval = setInterval(() => {
+          localElapsed++;
+          document.getElementById("timerValue").textContent =
+            fmtTime(localElapsed);
+          if (!prevIsLive) {
+            const t = Math.min(localElapsed / MAX_SEC, 1);
+            applySlimeColor(t);
+            updateExpression(Math.max(0, Math.round((1 - t) * 100)));
+          }
+        }, 1000);
+      }
+      function stopLocalTimer() {
+        if (localTimerInterval) {
+          clearInterval(localTimerInterval);
+          localTimerInterval = null;
+        }
+      }
+
+      async function poll() {
+        try {
+          const res = await fetch(`/api/status/${channelId}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const isLive = data.is_live;
+          const elapsed = data.elapsed_seconds || 0;
+
+          if (prevIsLive === false && isLive) {
+            spawnConfetti();
+            addRecord(localElapsed);
+            stopLocalTimer();
+            prevIsLive = true;
+            updateUI(
+              true,
+              localElapsed,
+              data.channel_name,
+              null,
+              data.live_title,
+            );
+            return;
+          }
+          if (prevIsLive === true && !isLive) {
+            prevIsLive = false;
+            startLocalTimer(0);
+            updateUI(false, 0, data.channel_name, null, null);
+            return;
+          }
+          if (prevIsLive === null) {
+            prevIsLive = isLive;
+            if (!isLive) startLocalTimer(elapsed);
+          }
+          if (!isLive && localTimerInterval === null) startLocalTimer(elapsed);
+          updateUI(
+            isLive,
+            localElapsed,
+            data.channel_name,
+            null,
+            data.live_title,
+          );
+
+          const txt = document.getElementById("pollingText");
+          txt.textContent = "방금 확인함";
+          setTimeout(() => {
+            txt.textContent = "5초마다 확인 중";
+          }, 2000);
+        } catch (e) {
+          console.error("폴링 오류:", e);
+          document.getElementById("pollingText").textContent = "오류 발생";
+        }
+      }
+
+      async function startMonitoring() {
+        const raw = document.getElementById("channelInput").value.trim();
+        if (!raw) return alert("채널 ID를 입력해주세요!");
+        channelId = raw
+          .replace(/.*chzzk\.naver\.com\/(?:live\/)?/, "")
+          .replace(/[/?#].*/, "")
+          .trim();
+        if (!channelId) return alert("올바른 채널 ID를 입력해주세요!");
+        if (pollInterval) clearInterval(pollInterval);
+        stopLocalTimer();
+        prevIsLive = null;
+        localElapsed = 0;
+        const btn = document.getElementById("startBtn");
+        btn.disabled = true;
+        btn.textContent = "연결 중...";
+        try {
+          const r = await fetch(`/api/channel-info/${channelId}`);
+          if (r.ok) {
+            const info = await r.json();
+            document.getElementById("channelName").textContent =
+              info.channel_name;
+            if (info.channel_image)
+              document.getElementById("channelAvatar").innerHTML =
+                `<img src="${info.channel_image}" alt=""/>`;
+          }
+        } catch {}
+        document.getElementById("mainLayout").classList.add("visible");
+        await poll();
+        pollInterval = setInterval(poll, 5000);
+        btn.disabled = false;
+        btn.textContent = "재시작";
+      }
+
+      document
+        .getElementById("channelInput")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") startMonitoring();
+        });
+    </script>
+  </body>
+</html>
