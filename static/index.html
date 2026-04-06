@@ -407,6 +407,35 @@
       #slimeSvg.alive {
         animation: slimeAlive 0.28s ease-in-out 10;
       }
+      #slimeSvg {
+        cursor: pointer;
+      }
+      #slimeSvg.wobble {
+        animation: slimeWobble 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) !important;
+      }
+      @keyframes slimeWobble {
+        0% {
+          transform: scaleX(1) scaleY(1);
+        }
+        15% {
+          transform: scaleX(1.18) scaleY(0.82);
+        }
+        30% {
+          transform: scaleX(0.82) scaleY(1.18);
+        }
+        45% {
+          transform: scaleX(1.12) scaleY(0.9);
+        }
+        60% {
+          transform: scaleX(0.92) scaleY(1.1);
+        }
+        75% {
+          transform: scaleX(1.05) scaleY(0.96);
+        }
+        100% {
+          transform: scaleX(1) scaleY(1);
+        }
+      }
       @keyframes slimeAlive {
         0%,
         100% {
@@ -541,6 +570,17 @@
         color: var(--slime);
         transition: color 3s;
       }
+      .close-time {
+        margin-top: 8px;
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 0.3px;
+      }
+      .close-time span {
+        color: var(--slime);
+        font-family: "Jua", sans-serif;
+        transition: color 3s;
+      }
 
       .confetti-wrap {
         position: fixed;
@@ -617,6 +657,7 @@
           <div class="card-title">⏱ 경과 시간</div>
           <div class="timer-value" id="timerValue">00:00:00</div>
           <div class="timer-label" id="timerLabel">방종 후 숨 참는 중...</div>
+          <div class="close-time" id="closeTime"></div>
         </div>
         <div class="card">
           <div class="polling-row">
@@ -821,7 +862,7 @@
       let prevIsLive = null,
         localElapsed = 0;
       const records = [];
-      const MAX_SEC = 48 * 3600;
+      const MAX_SEC = 12 * 3600;
 
       const MEMES_NORMAL = [
         '"아직 괜찮아... 아직은..."',
@@ -1085,6 +1126,7 @@
             addRecord(localElapsed);
             stopLocalTimer();
             prevIsLive = true;
+            document.getElementById("closeTime").innerHTML = "";
             updateUI(
               true,
               localElapsed,
@@ -1098,7 +1140,11 @@
             prevIsLive = false;
             startLocalTimer(0);
             updateUI(false, 0, data.channel_name, null, null);
-            return;
+          }
+          if (!isLive && data.close_date) {
+            const ct = document.getElementById("closeTime");
+            const txt = fmtCloseTime(data.close_date);
+            ct.innerHTML = txt ? `<span>${txt}</span>` : "";
           }
           if (prevIsLive === null) {
             prevIsLive = isLive;
@@ -1162,6 +1208,28 @@
         .addEventListener("keydown", (e) => {
           if (e.key === "Enter") startMonitoring();
         });
+
+      // 슬라임 클릭 출렁 인터랙션
+      document.getElementById("slimeSvg").addEventListener("click", () => {
+        const svg = document.getElementById("slimeSvg");
+        svg.classList.remove("wobble");
+        void svg.offsetWidth; // reflow 강제 (애니메이션 재시작)
+        svg.classList.add("wobble");
+        setTimeout(() => svg.classList.remove("wobble"), 650);
+      });
+
+      function fmtCloseTime(closeDateStr) {
+        if (!closeDateStr) return "";
+        try {
+          // "2024-03-01 14:22:05" 형식 파싱
+          const [date, time] = closeDateStr.split(" ");
+          const [, month, day] = date.split("-").map(Number);
+          const [hour, min] = time.split(":").map(Number);
+          return `${month}월 ${day}일 ${hour}시 ${min}분에 방종`;
+        } catch {
+          return "";
+        }
+      }
     </script>
   </body>
 </html>
