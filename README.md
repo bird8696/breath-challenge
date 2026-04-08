@@ -183,3 +183,13 @@ breath_challenge/
 ## 👤 개발자
 
 **bird8696** · [GitHub](https://github.com/bird8696)
+
+---
+
+**봇 프로필 이미지**
+
+- 출처: BandaL님[Pixiv @12618459](https://www.pixiv.net/users/12618459)
+
+**모니터링 스트리머**
+
+- [아라하시 타비 (Arahashi Tabi)](https://chzzk.naver.com/a6c4ddb09cdb160478996007bff35296) — 스텔라이브 소속 버튜버
