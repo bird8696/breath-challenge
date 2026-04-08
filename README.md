@@ -41,7 +41,13 @@
 
 ## 🖥 실행 화면
 
+### 슬라임 UI
+
 ![실행 화면](image/execution.png)
+
+### Discord 봇 알림
+
+![봇 알림](image/bot.png)
 
 ---
 
@@ -131,8 +137,9 @@ breath_challenge/
 ├── static/
 │   └── index.html      # 슬라임 UI 프론트엔드
 ├── image/
-│   ├── main.png
-│   └── execution.png
+│   ├── main.png        # 메인 화면 스크린샷
+│   ├── execution.png   # 실행 화면 스크린샷
+│   └── bot.png         # Discord 봇 알림 스크린샷
 ├── .env.example        # 환경변수 예시
 ├── requirements.txt
 └── .gitignore
