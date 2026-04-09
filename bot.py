@@ -12,8 +12,9 @@ load_dotenv()
 # ── 환경변수 ──
 BOT_TOKEN      = os.getenv("DISCORD_BOT_TOKEN")
 WEBHOOK_URL    = os.getenv("DISCORD_WEBHOOK_URL")
-CHANNEL_ID     = os.getenv("CHZZK_CHANNEL_ID")   # 치지직 채널 ID
-POLL_INTERVAL  = int(os.getenv("POLL_INTERVAL", "5"))  # 폴링 주기(초)
+CHANNEL_ID     = os.getenv("CHZZK_CHANNEL_ID")
+POLL_INTERVAL  = int(os.getenv("POLL_INTERVAL", "5"))
+UPDATE_INTERVAL_HOURS = int(os.getenv("UPDATE_INTERVAL_HOURS", "1"))  # 근황 알림 주기(시간)
 
 KST = ZoneInfo("Asia/Seoul")
 CHZZK_API = "https://api.chzzk.naver.com"
@@ -21,11 +22,15 @@ CLOSE_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # ── 상태 ──
 state = {
-    "is_live": None,       # 현재 방송 상태
+    "is_live": None,
     "channel_name": "",
-    "close_date": None,    # 방종 시각 문자열
+    "close_date": None,
     "elapsed_seconds": 0,
+    "last_update_alert": None,   # 마지막 근황 알림 시각
 }
+
+# 기록 저장 (복귀 기록)
+comeback_records = []
 
 # ── Discord 봇 설정 ──
 intents = discord.Intents.default()
@@ -97,6 +102,22 @@ def fmt_close_date(close_date_str: str) -> str:
         return close_date_str
 
 
+# 근황 알림 메시지 (경과 시간별)
+def get_update_message(elapsed_sec: int) -> str:
+    h = elapsed_sec // 3600
+    if h < 2:
+        return "아직 안 켰어요... 조금만 더 기다려봐요 🫧"
+    elif h < 4:
+        return "벌써 몇 시간째... 오늘은 안 켜는 걸까요? 😮‍💨"
+    elif h < 8:
+        return "많이 지쳤네요... 혹시 자는 건 아닐까요? 😴"
+    elif h < 24:
+        return "하루가 다 되어가요... 내일은 켜줄 거죠? 😭"
+    else:
+        d = elapsed_sec // 86400
+        return f"벌써 {d}일째 방종 중이에요... 살아있긴 한 걸까요? 💀"
+
+
 # ── 폴링 태스크 ──
 @tasks.loop(seconds=POLL_INTERVAL)
 async def poll_chzzk():
@@ -112,12 +133,14 @@ async def poll_chzzk():
         # 첫 실행
         if prev_live is None:
             state["is_live"] = curr_live
+            state["last_update_alert"] = datetime.now(KST)
             print(f"[봇 시작] {result['channel_name']} — {'방송 중' if curr_live else '오프라인'}")
             return
 
         # 방종 감지 (LIVE → OFFLINE)
         if prev_live and not curr_live:
             state["is_live"] = False
+            state["last_update_alert"] = datetime.now(KST)
             close_str = fmt_close_date(result["close_date"])
             await send_webhook(
                 content="",
@@ -136,14 +159,23 @@ async def poll_chzzk():
         # 복귀 감지 (OFFLINE → LIVE)
         elif not prev_live and curr_live:
             state["is_live"] = True
+            state["last_update_alert"] = datetime.now(KST)
             elapsed = state["elapsed_seconds"] if state["elapsed_seconds"] else 0
-            # 실제 elapsed는 close_date 기준으로 계산
             if state["close_date"]:
                 try:
                     close_dt = datetime.strptime(state["close_date"], CLOSE_DATE_FORMAT).replace(tzinfo=KST)
                     elapsed = int((datetime.now(KST) - close_dt).total_seconds())
                 except ValueError:
                     pass
+
+            # 복귀 기록 저장
+            comeback_records.append({
+                "time": datetime.now(KST).strftime("%m월 %d일 %H시 %M분"),
+                "elapsed": elapsed,
+                "title": result["live_title"] or "제목 없음",
+            })
+            if len(comeback_records) > 10:
+                comeback_records.pop(0)
 
             await send_webhook(
                 content="@everyone",
@@ -160,13 +192,37 @@ async def poll_chzzk():
             )
             print(f"[복귀] {result['channel_name']} — {fmt_time(elapsed)} 만에 복귀")
 
+        # ── 근황 알림 (오프라인 상태에서 N시간마다) ──
+        elif not curr_live and state["last_update_alert"]:
+            now = datetime.now(KST)
+            diff = (now - state["last_update_alert"]).total_seconds()
+            if diff >= UPDATE_INTERVAL_HOURS * 3600:
+                state["last_update_alert"] = now
+                elapsed = result["elapsed_seconds"]
+                close_str = fmt_close_date(result["close_date"])
+                msg = get_update_message(elapsed)
+                await send_webhook(
+                    content="",
+                    embeds=[{
+                        "title": "⏱ 방종 근황",
+                        "description": msg,
+                        "color": 0x9b59b6,
+                        "fields": [
+                            {"name": "방종 시각", "value": close_str or "알 수 없음", "inline": True},
+                            {"name": "경과 시간", "value": fmt_time(elapsed), "inline": True},
+                        ],
+                        "footer": {"text": "뿡댕이가 숨 참는 중... 🫧"}
+                    }]
+                )
+                print(f"[근황 알림] {fmt_time(elapsed)} 경과")
+
         state["is_live"] = curr_live
 
     except Exception as e:
         print(f"[폴링 오류] {e}")
 
 
-# ── 슬래시 명령어 ──
+# ── 슬래시 명령어: /상태 ──
 @bot.tree.command(name="상태", description="스트리머 현재 방송 상태 확인")
 async def status_command(interaction: discord.Interaction):
     try:
@@ -188,10 +244,37 @@ async def status_command(interaction: discord.Interaction):
             )
             embed.add_field(name="방종 시각", value=close_str or "알 수 없음", inline=True)
             embed.add_field(name="경과 시간", value=elapsed_str, inline=True)
-            embed.set_footer(text="뿡댕이 숨 참는 중... 🫧")
+            embed.set_footer(text="뿡댕이가 숨 참는 중... 🫧")
         await interaction.response.send_message(embed=embed)
     except Exception as e:
         await interaction.response.send_message(f"오류 발생: {e}", ephemeral=True)
+
+
+# ── 슬래시 명령어: /기록 ──
+@bot.tree.command(name="기록", description="최근 방송 복귀 기록 확인")
+async def record_command(interaction: discord.Interaction):
+    if not comeback_records:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="🏆 복귀 기록",
+                description="아직 복귀 기록이 없어요. 봇 시작 후 첫 복귀부터 기록돼요!",
+                color=0x778ca3
+            )
+        )
+        return
+
+    embed = discord.Embed(
+        title="🏆 최근 복귀 기록",
+        color=0x2ed573
+    )
+    for i, r in enumerate(reversed(comeback_records), 1):
+        embed.add_field(
+            name=f"{i}. {r['time']} 복귀",
+            value=f"방종 시간: **{fmt_time(r['elapsed'])}** | 방송 제목: {r['title']}",
+            inline=False
+        )
+    embed.set_footer(text=f"최근 {len(comeback_records)}개 기록")
+    await interaction.response.send_message(embed=embed)
 
 
 # ── 봇 시작 ──
