@@ -128,7 +128,7 @@ async def poll_chzzk():
                     "fields": [
                         {"name": "방종 시각", "value": close_str or "알 수 없음", "inline": True},
                     ],
-                    "footer": {"text": "슬라임이 숨을 참기 시작했어요... 🫧"}
+                    "footer": {"text": "뿡댕이가 숨을 참기 시작했어요... 🫧"}
                 }]
             )
             print(f"[방종] {result['channel_name']} — {close_str}")
@@ -155,7 +155,7 @@ async def poll_chzzk():
                         {"name": "방종 시간", "value": fmt_time(elapsed), "inline": True},
                         {"name": "방송 제목", "value": result["live_title"] or "제목 없음", "inline": True},
                     ],
-                    "footer": {"text": "슬라임이 살아났어요!! 🫧"}
+                    "footer": {"text": "뿡댕이가 살아났어요!! 🫧"}
                 }]
             )
             print(f"[복귀] {result['channel_name']} — {fmt_time(elapsed)} 만에 복귀")
@@ -188,7 +188,7 @@ async def status_command(interaction: discord.Interaction):
             )
             embed.add_field(name="방종 시각", value=close_str or "알 수 없음", inline=True)
             embed.add_field(name="경과 시간", value=elapsed_str, inline=True)
-            embed.set_footer(text="슬라임이 숨 참는 중... 🫧")
+            embed.set_footer(text="뿡댕이 숨 참는 중... 🫧")
         await interaction.response.send_message(embed=embed)
     except Exception as e:
         await interaction.response.send_message(f"오류 발생: {e}", ephemeral=True)
