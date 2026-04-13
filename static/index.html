@@ -571,14 +571,30 @@
         transition: color 3s;
       }
       .close-time {
-        margin-top: 8px;
+        margin-top: 12px;
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-left: 3px solid var(--slime);
+        border-radius: 8px;
+        padding: 8px 12px;
         font-size: 0.78rem;
         color: var(--muted);
-        letter-spacing: 0.3px;
+        transition: border-color 3s;
+        display: none;
       }
-      .close-time span {
+      .close-time.visible {
+        display: block;
+      }
+      .close-time .close-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 3px;
+      }
+      .close-time .close-value {
         color: var(--slime);
         font-family: "Jua", sans-serif;
+        font-size: 0.95rem;
         transition: color 3s;
       }
 
@@ -1126,7 +1142,9 @@
             addRecord(localElapsed);
             stopLocalTimer();
             prevIsLive = true;
-            document.getElementById("closeTime").innerHTML = "";
+            const ctEl = document.getElementById("closeTime");
+            ctEl.innerHTML = "";
+            ctEl.classList.remove("visible");
             updateUI(
               true,
               localElapsed,
@@ -1144,7 +1162,15 @@
           if (!isLive && data.close_date) {
             const ct = document.getElementById("closeTime");
             const txt = fmtCloseTime(data.close_date);
-            ct.innerHTML = txt ? `<span>${txt}</span>` : "";
+            if (txt) {
+              ct.innerHTML =
+                '<div class="close-label">🕐 방종 시각</div><div class="close-value">' +
+                txt +
+                "</div>";
+              ct.classList.add("visible");
+            } else {
+              ct.classList.remove("visible");
+            }
           }
           if (prevIsLive === null) {
             prevIsLive = isLive;
